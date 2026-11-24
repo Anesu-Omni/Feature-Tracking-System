@@ -1,122 +1,286 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+
+import React, { useState } from "react";
+import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [selectedPriority, setSelectedPriority] = useState("All");
+
+  // Dashboard statistics
+  const stats = [
+    {
+      title: "Total Requests",
+      count: 128,
+      icon: "📋",
+      color: "blue",
+    },
+    {
+      title: "Pending",
+      count: 24,
+      icon: "⏳",
+      color: "orange",
+    },
+    {
+      title: "In Progress",
+      count: 36,
+      icon: "⚙️",
+      color: "purple",
+    },
+    {
+      title: "Completed",
+      count: 68,
+      icon: "✓",
+      color: "green",
+    },
+  ];
+
+  // Requests currently being implemented, grouped by priority
+  const progressData = [
+    {
+      priority: "High",
+      requests: 12,
+      percentage: 33.33,
+      color: "#e74c3c",
+    },
+    {
+      priority: "Medium",
+      requests: 16,
+      percentage: 44.44,
+      color: "#f39c12",
+    },
+    {
+      priority: "Low",
+      requests: 8,
+      percentage: 22.23,
+      color: "#3498db",
+    },
+  ];
+
+  // Sample recent requests
+  const recentRequests = [
+    {
+      id: "FR-001",
+      title: "Add PDF payslip download",
+      system: "Payroll Management System",
+      priority: "High",
+      status: "In Progress",
+    },
+    {
+      id: "FR-002",
+      title: "Improve login functionality",
+      system: "HR Management System",
+      priority: "Medium",
+      status: "Pending",
+    },
+    {
+      id: "FR-003",
+      title: "Add employee search feature",
+      system: "HR Management System",
+      priority: "Low",
+      status: "Completed",
+    },
+    {
+      id: "FR-004",
+      title: "Update payment processing",
+      system: "Payroll Management System",
+      priority: "High",
+      status: "In Progress",
+    },
+  ];
+
+  // Filter progress by priority
+  const filteredProgress = progressData.filter((item) => {
+    return (
+      selectedPriority === "All" ||
+      item.priority === selectedPriority
+    );
+  });
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Welcome to Feature Tracking System: Eunice!</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="dashboard">
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      {/* Sidebar */}
+      <aside className="sidebar">
+        <div className="logo">
+          <span>◆</span> FeatureTrack
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        <p className="menu-heading">MAIN MENU</p>
+
+        <nav>
+          <a href="#" className="active">▦ Dashboard</a>
+          <a href="#">☷ Feature Requests</a>
+          <a href="#">▣ Systems</a>
+          <a href="#">♙ Users</a>
+          <a href="#">▤ Reports</a>
+          <a href="#">⚙ Settings</a>
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="avatar">A</div>
+          <div>
+            <strong>Administrator</strong>
+            <small>System Admin</small>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="main-content">
+
+        {/* Top Header */}
+        <header className="top-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p>Welcome back, Administrator!</p>
+          </div>
+
+          <div className="header-right">
+            <span className="notification">🔔</span>
+            <div className="profile">
+              <div className="avatar">D</div>
+              <span>DEV</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Statistics Cards */}
+        <section className="stats-grid">
+          {stats.map((stat, index) => (
+            <div className="stat-card" key={index}>
+              <div className={`stat-icon ${stat.color}`}>
+                {stat.icon}
+              </div>
+
+              <div>
+                <p>{stat.title}</p>
+                <h2>{stat.count}</h2>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        {/* Request Progress */}
+        <section className="content-card progress-section">
+
+          <div className="section-header">
+            <div>
+              <h2>Request Progress</h2>
+              <p>In-progress requests grouped by priority</p>
+            </div>
+
+            <div className="filter-container">
+              <label htmlFor="priorityFilter">
+                Filter by Priority:
+              </label>
+
+              <select
+                id="priorityFilter"
+                value={selectedPriority}
+                onChange={(e) =>
+                  setSelectedPriority(e.target.value)
+                }
+              >
+                <option value="All">All Priorities</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="progress-list">
+            {filteredProgress.map((item) => (
+              <div className="progress-item" key={item.priority}>
+
+                <div className="progress-info">
+                  <strong>{item.priority} Priority</strong>
+
+                  <span>
+                    {item.requests} requests (
+                    {item.percentage.toFixed(1)}%)
+                  </span>
+                </div>
+
+                <div className="progress-track">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${item.percentage}%`,
+                      backgroundColor: item.color,
+                    }}
+                  ></div>
+                </div>
+
+              </div>
+            ))}
+          </div>
+
+          <div className="progress-total">
+            Total in-progress requests: <strong>36</strong>
+          </div>
+        </section>
+
+        {/* Recent Requests Table */}
+        <section className="content-card requests-section">
+
+          <div className="section-header">
+            <div>
+              <h2>Recent Feature Requests</h2>
+              <p>Overview of recently submitted requests</p>
+            </div>
+
+            <button className="view-all">
+              View All
+            </button>
+          </div>
+
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Request ID</th>
+                  <th>Request Title</th>
+                  <th>System</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {recentRequests.map((request) => (
+                  <tr key={request.id}>
+                    <td>{request.id}</td>
+                    <td>{request.title}</td>
+                    <td>{request.system}</td>
+
+                    <td>
+                      <span
+                        className={`priority ${request.priority.toLowerCase()}`}
+                      >
+                        {request.priority}
+                      </span>
+                    </td>
+
+                    <td>
+                      <span
+                        className={`status ${request.status
+                          .toLowerCase()
+                          .replace(" ", "-")}`}
+                      >
+                        {request.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
