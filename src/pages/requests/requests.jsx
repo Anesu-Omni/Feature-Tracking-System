@@ -95,6 +95,7 @@ function Requests({
             <option value="All">All statuses</option>
             <option value="Pending">Pending</option>
             <option value="In Progress">In Progress</option>
+            <option value="In Testing">In Testing</option>
             <option value="Completed">Completed</option>
           </select>
         </label>

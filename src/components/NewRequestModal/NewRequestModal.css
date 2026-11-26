@@ -40,6 +40,18 @@
   gap: 16px;
 }
 
+.modal-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid #9fb3ca;
+  border-radius: 6px;
+  background: white;
+  color: #1d2b3d;
+  font: inherit;
+  resize: vertical;
+}
+
 .modal-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

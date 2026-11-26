@@ -23,4 +23,13 @@ The text is checked in the browser before requesting an OTP. This client-side ch
 
 ## Demo authentication
 
-In development, register a demo account before signing in. Demo accounts are stored in browser local storage under `fts.auth.accounts`; clear them with `localStorage.removeItem("fts.auth.accounts")` in the browser console. Registration checks the synthetic employee roster in `src/data/demoCompanyDirectory.js` and allows only the Developers of Projects department. The roster entries are test data and must be replaced with a company-directory API before real use. Only `@omnicontact.biz` and `@econet.co.zw` email addresses are accepted. Phone and OTP are optional. This client-side store is for demonstration only; production authentication and department enforcement must happen on a trusted server.
+In development, demo accounts are stored in browser local storage under `fts.auth.accounts`; clear them with `localStorage.removeItem("fts.auth.accounts")` in the browser console. The first demo sign-in seeds these credentials:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Project Manager | `project.manager@omnicontact.biz` | `FtS-Manager-2026!` |
+| Supervisor | `eunice.chikondo@omnicontact.biz` | `FtS-Supervisor-2026!` |
+| Project Leader | `anesu@econet.co.zw` | `FtS-Leader-2026!` |
+| Developer | `developer.demo@econet.co.zw` | `FtS-Developer-2026!` |
+
+New demo registrations are checked against the synthetic employee roster in `src/data/demoCompanyDirectory.js` and limited to the Developers of Projects department. These credentials and roster entries are test data and must be replaced with company-directory and authentication APIs before real use. Only `@omnicontact.biz` and `@econet.co.zw` email addresses are accepted. Phone and OTP are optional. This client-side store is for demonstration only; production authentication and department enforcement must happen on a trusted server.

@@ -24,7 +24,7 @@ function Dashboard({
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   });
 
-  const requestCounts = currentMonthRequests.reduce(
+  const requestCounts = requests.reduce(
     (counts, r) => {
       counts[r.status] = (counts[r.status] || 0) + 1;
       return counts;
@@ -32,15 +32,21 @@ function Dashboard({
     { Pending: 0, "In Progress": 0, Completed: 0 }
   );
 
-  const completionRate = currentMonthRequests.length
-    ? Math.round((requestCounts.Completed / currentMonthRequests.length) * 100)
+  const completionRate = requests.length
+    ? Math.round((requestCounts.Completed / requests.length) * 100)
+    : 0;
+  const currentMonthCompleted = currentMonthRequests.filter(
+    (request) => request.status === "Completed",
+  ).length;
+  const currentMonthCompletionRate = currentMonthRequests.length
+    ? Math.round((currentMonthCompleted / currentMonthRequests.length) * 100)
     : 0;
 
   const stats = [
-    { title: "Requests this month", count: currentMonthRequests.length, view: { title: "All Requests" }, icon: "file", color: "blue" },
-    { title: "Pending", count: requestCounts.Pending, view: { title: "Pending Requests", status: "Pending" }, icon: "clock", color: "orange" },
-    { title: "In Progress", count: requestCounts["In Progress"], view: { title: "In Progress Requests", status: "In Progress" }, icon: "activity", color: "purple" },
-    { title: "Completed", count: requestCounts.Completed, subtext: `${completionRate}% rate`, view: { title: "Completed Requests", status: "Completed" }, icon: "check", color: "green" },
+    { title: "Total Features", count: requests.length, view: { title: "All Feature Requests", monthFilter: "all" }, icon: "file", color: "blue" },
+    { title: "Pending", count: requestCounts.Pending, view: { title: "Pending Requests", status: "Pending", monthFilter: "all" }, icon: "clock", color: "orange" },
+    { title: "In Progress", count: requestCounts["In Progress"], view: { title: "In Progress Requests", status: "In Progress", monthFilter: "all" }, icon: "activity", color: "purple" },
+    { title: "Completed", count: requestCounts.Completed, subtext: `${completionRate}% rate`, view: { title: "Completed Requests", status: "Completed", monthFilter: "all" }, icon: "check", color: "green" },
   ];
 
   const progressData = ["High", "Medium", "Low"].map((priority) => {
@@ -137,7 +143,7 @@ function Dashboard({
         </div>
 
         <div className="progress-total">
-          Total requests this month: <strong>{currentMonthRequests.length}</strong> • Completion rate: <strong>{completionRate}%</strong>
+          Total requests this month: <strong>{currentMonthRequests.length}</strong> • Completion rate: <strong>{currentMonthCompletionRate}%</strong>
         </div>
       </section>
 

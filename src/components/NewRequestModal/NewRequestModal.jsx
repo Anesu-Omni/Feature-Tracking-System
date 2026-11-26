@@ -14,6 +14,7 @@ function NewRequestModal({
   const [system, setSystem] = useState(systems[0] || "Payroll Management System");
   const [priority, setPriority] = useState("Medium");
   const [requester, setRequester] = useState(defaultRequester);
+  const [description, setDescription] = useState("");
 
   if (!isOpen) return null;
 
@@ -23,6 +24,7 @@ function NewRequestModal({
     onAdd({
       id: nextId,
       title: title.trim(),
+      description: description.trim(),
       system,
       priority,
       status: "Pending",
@@ -30,6 +32,7 @@ function NewRequestModal({
       createdAt: new Date().toISOString(),
     });
     setTitle("");
+    setDescription("");
     onClose();
   };
 
@@ -61,6 +64,18 @@ function NewRequestModal({
               placeholder="e.g., Export monthly tax summary to CSV"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+            />
+          </label>
+
+          <label className="filter-field">
+            <span>Feature Description *</span>
+            <textarea
+              maxLength={2000}
+              required
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe the requested feature and the problem it should solve."
             />
           </label>
 

@@ -24,11 +24,10 @@ import {
   getNextRequestId,
   getRequestViewTitle,
 } from "./utils/requestHelpers";
-import { getPermissions, getRoleLabel, ROLE_PRESETS } from "./utils/permissions";
+import { getPermissions, getRoleLabel } from "./utils/permissions";
 
-function Workspace({ user, demoMode, onLogout, logoutError }) {
-  const [previewUser, setPreviewUser] = useState(null);
-  const activeUser = demoMode && previewUser ? previewUser : user;
+function Workspace({ user, onLogout, logoutError }) {
+  const activeUser = user;
   const permissions = useMemo(() => getPermissions(activeUser), [activeUser]);
   const roleLabel = getRoleLabel(activeUser);
   const [requests, setRequests] = useState(() => {
@@ -130,8 +129,14 @@ function Workspace({ user, demoMode, onLogout, logoutError }) {
   };
 
   const openRequests = (view = {}) => {
-    setRequestView({ title: "All Requests", status: "All", priority: "All", ...view });
-    setMonthFilter(getMonthKey(new Date()));
+    const { monthFilter: targetMonth, ...requestFilters } = view;
+    setRequestView({
+      title: "All Requests",
+      status: "All",
+      priority: "All",
+      ...requestFilters,
+    });
+    setMonthFilter(targetMonth || getMonthKey(new Date()));
     setSystemFilter("All");
     setSearchQuery("");
     navigateTo("requests");
@@ -199,37 +204,9 @@ function Workspace({ user, demoMode, onLogout, logoutError }) {
       />
 
       <main className="main-content">
-        {demoMode && (
-          <div className="role-preview-bar">
-            <span>
-              <strong>Active Role:</strong> {activeUser.fullName} — <em>{roleLabel}</em>
-            </span>
-            <label>
-              Switch Preview Role:{" "}
-              <select
-                value={roleLabel}
-                onChange={(event) => {
-                  const preset = ROLE_PRESETS.find(
-                    (item) => getRoleLabel(item.user) === event.target.value,
-                  );
-                  setPreviewUser(preset ? preset.user : null);
-                  setScreen("dashboard");
-                }}
-              >
-                {ROLE_PRESETS.map((preset) => (
-                  <option key={preset.label} value={getRoleLabel(preset.user)}>
-                    {preset.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
-
         <Header
           title={pageHeaders[screen].title}
           subtitle={pageHeaders[screen].subtitle}
-          user={user}
           isDrawerOpen={isDrawerOpen}
           onToggleDrawer={() => setIsDrawerOpen((prev) => !prev)}
           onNewRequest={permissions.canCreateRequest ? () => setIsModalOpen(true) : null}
@@ -312,7 +289,7 @@ function Workspace({ user, demoMode, onLogout, logoutError }) {
 }
 
 function WorkspaceGate() {
-  const { user, demoMode, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, logout } = useAuth();
   const [logoutError, setLogoutError] = useState("");
 
   async function handleLogout() {
@@ -330,14 +307,7 @@ function WorkspaceGate() {
     return <AuthPage />;
   }
 
-  return (
-    <Workspace
-      user={user}
-      demoMode={demoMode}
-      onLogout={handleLogout}
-      logoutError={logoutError}
-    />
-  );
+  return <Workspace user={user} onLogout={handleLogout} logoutError={logoutError} />;
 }
 
 export default function App() {

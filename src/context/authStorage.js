@@ -11,6 +11,24 @@ export const EMAIL_ERROR_MESSAGE =
 
 const ACCOUNTS_KEY = "fts.auth.accounts";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const DEMO_LOGIN_CREDENTIALS = [
+  {
+    email: "project.manager@omnicontact.biz",
+    password: "FtS-Manager-2026!",
+  },
+  {
+    email: "eunice.chikondo@omnicontact.biz",
+    password: "FtS-Supervisor-2026!",
+  },
+  {
+    email: "anesu@econet.co.zw",
+    password: "FtS-Leader-2026!",
+  },
+  {
+    email: "developer.demo@econet.co.zw",
+    password: "FtS-Developer-2026!",
+  },
+];
 
 export function normalizeEmail(email) {
   return String(email ?? "").trim().toLowerCase();
@@ -71,14 +89,55 @@ function toPublicUser(account) {
     fullName: account.fullName,
     email: account.email,
     role: account.role,
+    position: account.position,
     department: account.department,
     assignedProjectIds: account.assignedProjectIds,
   };
 }
 
-export function findAccountByEmail(email) {
-  const target = normalizeEmail(email);
-  return readAccounts().find((account) => account.email === target) ?? null;
+async function createStoredAccount(employee, password) {
+  const salt = createSalt();
+  return {
+    id: crypto.randomUUID(),
+    fullName: employee.fullName,
+    email: normalizeEmail(employee.email),
+    phone: "",
+    salt,
+    passwordHash: await hashPassword(password, salt),
+    role: employee.role || "Developer",
+    position: employee.position || null,
+    department: employee.department,
+    assignedProjectIds: employee.assignedProjectIds || ["demo-project"],
+    createdAt: new Date().toISOString(),
+  };
+}
+
+async function ensureDemoAccounts() {
+  const accounts = readAccounts();
+  const newAccounts = [];
+
+  for (const credentials of DEMO_LOGIN_CREDENTIALS) {
+    if (accounts.some((account) => account.email === credentials.email)) {
+      continue;
+    }
+
+    const employee = DEMO_COMPANY_DIRECTORY.find(
+      (entry) => normalizeEmail(entry.email) === credentials.email,
+    );
+    if (!employee || employee.department !== DEVELOPER_DEPARTMENT) {
+      throw new Error(
+        `Demo credentials are missing a ${DEVELOPER_DEPARTMENT} directory entry.`,
+      );
+    }
+
+    newAccounts.push(await createStoredAccount(employee, credentials.password));
+  }
+
+  if (newAccounts.length) {
+    writeAccounts([...accounts, ...newAccounts]);
+  }
+
+  return [...accounts, ...newAccounts];
 }
 
 export async function registerAccount({ fullName, email, password, phone }) {
@@ -98,30 +157,22 @@ export async function registerAccount({ fullName, email, password, phone }) {
     throw new Error("Your name does not match the company directory record.");
   }
 
-  if (findAccountByEmail(normalized)) {
+  const accounts = await ensureDemoAccounts();
+  if (accounts.some((account) => account.email === normalized)) {
     throw new Error("An account with this email already exists. Sign in instead.");
   }
 
-  const salt = createSalt();
-  const account = {
-    id: crypto.randomUUID(),
-    fullName: fullName.trim(),
-    email: normalized,
-    phone: phone || "",
-    salt,
-    passwordHash: await hashPassword(password, salt),
-    role: "Developer",
-    department: directoryEmployee.department,
-    assignedProjectIds: ["demo-project"],
-    createdAt: new Date().toISOString(),
-  };
-
-  writeAccounts([...readAccounts(), account]);
+  const account = await createStoredAccount(directoryEmployee, password);
+  account.fullName = fullName.trim();
+  account.phone = phone || "";
+  writeAccounts([...accounts, account]);
   return toPublicUser(account);
 }
 
 export async function verifyCredentials(email, password) {
-  const account = findAccountByEmail(email);
+  const accounts = await ensureDemoAccounts();
+  const target = normalizeEmail(email);
+  const account = accounts.find((entry) => entry.email === target);
   if (!account) return null;
   const hash = await hashPassword(password, account.salt);
   return hash === account.passwordHash ? toPublicUser(account) : null;

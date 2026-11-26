@@ -26,8 +26,30 @@
 }
 
 .status.completed { background: #dcfce7; color: #15803d; }
+.status.in-progress { background: #e0e7ff; color: #4338ca; }
 
 .sys-meta {
   font-size: 13px;
   color: #53677e;
+}
+
+.system-progress-label {
+  display: flex;
+  justify-content: space-between;
+  color: #53677e;
+  font-size: 12px;
+}
+
+.system-progress-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.system-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #16834a;
+  transition: width 0.2s ease;
 }

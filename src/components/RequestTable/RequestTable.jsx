@@ -1,8 +1,88 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useId } from "react";
 import Icon from "../Icon/Icon";
 import "./RequestTable.css";
 
 const PRIORITY_WEIGHT = { High: 3, Medium: 2, Low: 1 };
+
+function RequestDetailsDialog({ request, onClose }) {
+  const titleId = useId();
+  const createdAt = new Date(request.createdAt);
+
+  return (
+    <div className="request-detail-backdrop" onClick={onClose}>
+      <section
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="request-detail-dialog"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") onClose();
+        }}
+        role="dialog"
+      >
+        <header className="request-detail-header">
+          <div>
+            <p className="request-detail-id">{request.id}</p>
+            <h2 id={titleId}>{request.title}</h2>
+          </div>
+          <button
+            aria-label="Close feature details"
+            autoFocus
+            className="icon-btn"
+            onClick={onClose}
+            type="button"
+          >
+            <Icon name="close" />
+          </button>
+        </header>
+
+        <dl className="request-detail-grid">
+          <div>
+            <dt>System</dt>
+            <dd>{request.system}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{request.status}</dd>
+          </div>
+          <div>
+            <dt>Priority</dt>
+            <dd>{request.priority}</dd>
+          </div>
+          <div>
+            <dt>Requested by</dt>
+            <dd>{request.requester || "Not specified"}</dd>
+          </div>
+          <div>
+            <dt>Assigned developer</dt>
+            <dd>{request.assignedDeveloper || "Unassigned"}</dd>
+          </div>
+          <div>
+            <dt>Created</dt>
+            <dd>
+              {Number.isNaN(createdAt.getTime())
+                ? "Unknown"
+                : createdAt.toLocaleString()}
+            </dd>
+          </div>
+        </dl>
+
+        <section className="request-detail-description">
+          <h3>Description</h3>
+          <p>
+            {request.description || "No description was provided for this request."}
+          </p>
+        </section>
+
+        <div className="request-detail-actions">
+          <button className="view-all" onClick={onClose} type="button">
+            Close
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
 
 function RequestTable({
   requests,
@@ -14,10 +94,12 @@ function RequestTable({
   developers = ["Hellington Vunganayi", "T. Moyo", "R. Ndlovu"],
 }) {
   const [sortConfig, setSortConfig] = useState({ key: "createdAt", direction: "desc" });
+  const [selectedRequestId, setSelectedRequestId] = useState(null);
   const canAssignDeveloper = permissions.canAssignDeveloper ?? true;
   const canUpdateProgress = permissions.canUpdateProgress ?? true;
   const canVerifyAndComplete = permissions.canVerifyAndComplete ?? true;
   const canDeleteRequest = permissions.canDeleteRequest ?? true;
+  const selectedRequest = requests.find((request) => request.id === selectedRequestId);
 
   const sortedRequests = useMemo(() => {
     return [...requests].sort((a, b) => {
@@ -50,6 +132,7 @@ function RequestTable({
   }
 
   return (
+    <>
     <div className="table-wrapper">
       <table>
         <thead>
@@ -78,7 +161,13 @@ function RequestTable({
               <td className="mono-id">{request.id}</td>
               <td>
                 <div className="title-cell">
-                  <strong>{request.title}</strong>
+                  <button
+                    className="request-title-link"
+                    onClick={() => setSelectedRequestId(request.id)}
+                    type="button"
+                  >
+                    {request.title}
+                  </button>
                   {request.requester && <small>Requested by {request.requester}</small>}
                 </div>
               </td>
@@ -155,6 +244,13 @@ function RequestTable({
         </tbody>
       </table>
     </div>
+    {selectedRequest && (
+      <RequestDetailsDialog
+        onClose={() => setSelectedRequestId(null)}
+        request={selectedRequest}
+      />
+    )}
+    </>
   );
 }
 
