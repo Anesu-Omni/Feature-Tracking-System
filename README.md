@@ -14,3 +14,9 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## Sign-in CAPTCHA
+
+Sign-in uses a custom canvas CAPTCHA with randomly generated characters and a refresh control. No CAPTCHA package or paid service is required.
+
+The text is checked in the browser before requesting an OTP. This client-side check can be bypassed and is not sufficient protection against automated abuse; production authentication should generate and validate CAPTCHA challenges on the server.

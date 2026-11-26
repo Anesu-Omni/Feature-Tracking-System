@@ -70,7 +70,13 @@ export function AuthProvider({ children }) {
   const demoMode =
     import.meta.env.DEV && import.meta.env.VITE_AUTH_MODE !== "api";
 
-  async function login({ email, password }) {
+  async function login({
+    email,
+    password,
+    phone,
+    otp,
+    otpVerificationId,
+  }) {
     if (demoMode) {
       setUser(DEMO_USER);
       return DEMO_USER;
@@ -78,12 +84,51 @@ export function AuthProvider({ children }) {
 
     const data = await postAuthRequest(
       "/api/auth/login",
-      { email, password },
+      {
+        email,
+        password,
+        phone,
+        otp,
+        otpVerificationId,
+      },
       "Sign-in failed. Check your credentials and try again.",
     );
     const authenticatedUser = getAuthenticatedUser(data);
     setUser(authenticatedUser);
     return authenticatedUser;
+  }
+
+  async function requestPhoneOtp({ phone }) {
+    if (demoMode) {
+      throw new Error(
+        "SMS verification is unavailable in preview mode. Configure the live authentication API to send a code.",
+      );
+    }
+
+    const data = await postAuthRequest(
+      "/api/auth/otp/send",
+      { phone },
+      "We couldn't send a verification code. Check your number and try again.",
+    );
+    if (typeof data.verificationId !== "string" || !data.verificationId) {
+      throw new Error("The authentication service returned an invalid OTP response.");
+    }
+
+    return { verificationId: data.verificationId };
+  }
+
+  async function requestPasswordReset({ email }) {
+    if (demoMode) {
+      throw new Error(
+        "Password reset is unavailable in preview mode. Configure the live authentication API to enable it.",
+      );
+    }
+
+    await postAuthRequest(
+      "/api/auth/password/forgot",
+      { email },
+      "We couldn't request a password reset. Please try again.",
+    );
   }
 
   async function signup({ fullName, email, password, inviteCode }) {
@@ -148,6 +193,8 @@ export function AuthProvider({ children }) {
     demoMode,
     user,
     login,
+    requestPasswordReset,
+    requestPhoneOtp,
     signup,
     logout,
     isAuthenticated: Boolean(user),

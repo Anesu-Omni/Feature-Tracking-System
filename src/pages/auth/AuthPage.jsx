@@ -1,18 +1,66 @@
-import { useId, useRef, useState } from "react";
-import { useAuth } from "../context/useAuth";
+import { useEffect, useId, useRef, useState } from "react";
+import { useAuth } from "../../context/useAuth";
 import "./AuthPage.css";
 
 const SAMPLE_USER_NAME = "Hellington Vunganayi";
 const MIN_PASSWORD_LENGTH = 8;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const PHONE_PATTERN = /^\+[1-9]\d{7,14}$/;
+const CAPTCHA_CHARACTERS =
+  "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
 
 const EMPTY_VALUES = {
   fullName: "",
   email: "",
   inviteCode: "",
+  phone: "",
+  otp: "",
   password: "",
   confirmPassword: "",
 };
+
+function generateCaptchaText() {
+  let text = "";
+  for (let index = 0; index < 6; index += 1) {
+    text += CAPTCHA_CHARACTERS.charAt(
+      Math.floor(Math.random() * CAPTCHA_CHARACTERS.length),
+    );
+  }
+  return text;
+}
+
+function drawCaptcha(canvas, text) {
+  const context = canvas?.getContext("2d");
+  if (!context) return;
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#eef4ff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let index = 0; index < 6; index += 1) {
+    context.strokeStyle = "rgba(18, 80, 196, 0.35)";
+    context.beginPath();
+    context.moveTo(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height,
+    );
+    context.lineTo(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height,
+    );
+    context.stroke();
+  }
+
+  context.font = "bold 26px monospace";
+  context.fillStyle = "#0a2a6e";
+  for (let index = 0; index < text.length; index += 1) {
+    context.save();
+    context.translate(18 + index * 29, 32 + (Math.random() * 8 - 4));
+    context.rotate((Math.random() - 0.5) * 0.4);
+    context.fillText(text[index], 0, 0);
+    context.restore();
+  }
+}
 
 const iconShapes = {
   activity: (
@@ -72,6 +120,11 @@ const iconShapes = {
       <path d="m3 7 9 6 9-6" />
     </>
   ),
+  phone: (
+    <>
+      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3.2a2 2 0 0 1-.6 1.7L7.7 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 1.7-.6l3.2.5a2 2 0 0 1 1.7 2.4Z" />
+    </>
+  ),
   shield: (
     <>
       <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z" />
@@ -124,19 +177,16 @@ const BOARD_COLUMNS = [
 function PipelineBackdrop() {
   return (
     <div aria-hidden="true" className="fts-auth__backdrop">
-      <svg
-        className="fts-auth__flow"
-        focusable="false"
-        preserveAspectRatio="none"
-        viewBox="0 0 600 120"
-      >
-        <path
-          className="fts-auth__flow-line"
-          d="M0 90 C 90 90, 110 30, 200 30 S 330 80, 420 60 S 540 10, 600 20"
-        />
-        <circle cx="200" cy="30" r="6" />
-        <circle cx="420" cy="60" r="6" />
-        <circle cx="560" cy="14" r="8" />
+      <span className="fts-auth__glow fts-auth__glow--a" />
+      <span className="fts-auth__glow fts-auth__glow--b" />
+      <svg className="fts-auth__rings" focusable="false" viewBox="0 0 720 720">
+        <circle cx="360" cy="360" r="120" />
+        <circle className="is-dashed" cx="360" cy="360" r="200" />
+        <circle cx="360" cy="360" r="280" />
+        <circle className="is-dashed" cx="360" cy="360" r="350" />
+        <circle className="fts-auth__ring-node" cx="160" cy="360" r="5" />
+        <circle className="fts-auth__ring-node" cx="558" cy="162" r="5" />
+        <circle className="fts-auth__ring-node" cx="360" cy="10" r="7" />
       </svg>
       <div className="fts-auth__board">
         {BOARD_COLUMNS.map((column) => (
@@ -147,6 +197,9 @@ function PipelineBackdrop() {
             <div className="fts-auth__column-head">
               <span className="fts-auth__column-dot" />
               {column.title}
+              <span className="fts-auth__column-count">
+                {column.cards.length}
+              </span>
             </div>
             {column.cards.map((width, index) => (
               <div
@@ -159,7 +212,15 @@ function PipelineBackdrop() {
                 />
                 <span className="fts-auth__ticket-line" />
                 <span className="fts-auth__ticket-meta">
-                  <span className="fts-auth__ticket-avatar" />
+                  {column.tone === "done" ? (
+                    <Icon
+                      className="fts-auth__ticket-check"
+                      name="check"
+                      size={16}
+                    />
+                  ) : (
+                    <span className="fts-auth__ticket-avatar" />
+                  )}
                   <span className="fts-auth__ticket-bar">
                     <span style={{ width: `${Math.max(width - 20, 24)}%` }} />
                   </span>
@@ -173,7 +234,11 @@ function PipelineBackdrop() {
   );
 }
 
-function validate(mode, values) {
+function normalizePhone(phone) {
+  return phone.replace(/[\s()-]/g, "");
+}
+
+function validate(mode, values, otpVerificationId) {
   const errors = {};
 
   if (mode === "signup" && !values.fullName.trim()) {
@@ -189,6 +254,22 @@ function validate(mode, values) {
 
   if (mode === "signup" && !values.inviteCode.trim()) {
     errors.inviteCode = "Enter the invite code from your department.";
+  }
+
+  if (mode === "login") {
+    const phone = normalizePhone(values.phone);
+    if (!phone) {
+      errors.phone = "Enter your mobile number.";
+    } else if (!PHONE_PATTERN.test(phone)) {
+      errors.phone = "Enter a valid number with its country code, such as +263.";
+    } else if (!otpVerificationId) {
+      errors.phone = "Send a verification code to your mobile number first.";
+    }
+
+    if (otpVerificationId && !values.otp.trim()) {
+      errors.otp = "Enter the verification code sent to your mobile.";
+    }
+
   }
 
   if (!values.password) {
@@ -220,6 +301,7 @@ function AuthField({
   onBlur,
   onChange,
   onToggle,
+  action,
   placeholder,
   type = "text",
   value,
@@ -272,6 +354,7 @@ function AuthField({
             <Icon name={visible ? "eyeOff" : "eye"} />
           </button>
         )}
+        {action}
       </div>
       {hint && !error && (
         <span className="fts-auth__hint" id={hintId}>
@@ -288,12 +371,98 @@ function AuthField({
   );
 }
 
+function TextCaptcha({ onVerify }) {
+  const uid = useId();
+  const canvasRef = useRef(null);
+  const [captchaText, setCaptchaText] = useState(generateCaptchaText);
+  const [userInput, setUserInput] = useState("");
+  const [status, setStatus] = useState("idle");
+
+  useEffect(() => {
+    drawCaptcha(canvasRef.current, captchaText);
+  }, [captchaText]);
+
+  function refreshCaptcha() {
+    setCaptchaText(generateCaptchaText());
+    setUserInput("");
+    setStatus("idle");
+    onVerify(false);
+  }
+
+  function handleChange(event) {
+    const value = event.target.value;
+    const isVerified =
+      value.trim().toLowerCase() === captchaText.toLowerCase();
+    setUserInput(value);
+    setStatus(
+      isVerified
+        ? "valid"
+        : value.length >= captchaText.length
+          ? "invalid"
+          : "idle",
+    );
+    onVerify(isVerified);
+  }
+
+  return (
+    <div className="fts-auth__captcha">
+      <p className="fts-auth__label">CAPTCHA verification</p>
+      <div className="fts-auth__captcha-challenge">
+        <canvas
+          aria-label="Distorted CAPTCHA text. Enter the characters shown."
+          className="fts-auth__captcha-canvas"
+          height="50"
+          ref={canvasRef}
+          role="img"
+          width="200"
+        />
+        <button
+          aria-label="Generate a new CAPTCHA"
+          className="fts-auth__captcha-refresh"
+          onClick={refreshCaptcha}
+          type="button"
+        >
+          Refresh
+        </button>
+      </div>
+      <AuthField
+        autoComplete="off"
+        error={
+          status === "invalid" ? "The CAPTCHA text does not match." : ""
+        }
+        icon="key"
+        id={`${uid}-answer`}
+        label="Enter the text shown"
+        name="captchaAnswer"
+        onChange={handleChange}
+        placeholder="Enter the characters above"
+        value={userInput}
+      />
+      {status === "valid" && (
+        <span className="fts-auth__captcha-success" role="status">
+          CAPTCHA verified.
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function AuthPage({ onAuthenticated }) {
-  const { demoMode, login, signup } = useAuth();
+  const {
+    demoMode,
+    login,
+    requestPasswordReset,
+    requestPhoneOtp,
+    signup,
+  } = useAuth();
   const uid = useId();
   const formRef = useRef(null);
   const [mode, setMode] = useState("login");
   const [values, setValues] = useState(EMPTY_VALUES);
+  const [otpVerificationId, setOtpVerificationId] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [captchaKey, setCaptchaKey] = useState(0);
   const [touched, setTouched] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -301,16 +470,29 @@ export default function AuthPage({ onAuthenticated }) {
   const [status, setStatus] = useState({ type: "idle" });
   const [hasModeSwitched, setHasModeSwitched] = useState(false);
 
-  const isLoading = status.type === "loading";
+  const isLoading =
+    status.type === "loading" ||
+    status.type === "sending-otp" ||
+    status.type === "sending-reset";
   const isSignup = mode === "signup";
-  const errors = demoMode ? {} : validate(mode, values);
+  const errors = demoMode
+    ? {}
+    : validate(mode, values, otpVerificationId);
   const fieldId = (name) => `${uid}-${name}`;
   const visibleError = (name) =>
     touched[name] || submitted ? errors[name] : "";
 
   function handleChange(event) {
     const { name, value } = event.target;
-    setValues((current) => ({ ...current, [name]: value }));
+    setValues((current) =>
+      name === "phone"
+        ? { ...current, phone: value, otp: "" }
+        : { ...current, [name]: value },
+    );
+    if (name === "phone") {
+      setOtpVerificationId("");
+      setOtpSent(false);
+    }
     if (status.type === "error" || status.type === "info") {
       setStatus({ type: "idle" });
     }
@@ -330,6 +512,10 @@ export default function AuthPage({ onAuthenticated }) {
     setShowPassword(false);
     setShowConfirm(false);
     setStatus({ type: "idle" });
+    setOtpVerificationId("");
+    setOtpSent(false);
+    setCaptchaVerified(false);
+    setCaptchaKey((current) => current + 1);
     setValues((current) => ({ ...EMPTY_VALUES, email: current.email }));
   }
 
@@ -358,7 +544,9 @@ export default function AuthPage({ onAuthenticated }) {
     }
 
     setSubmitted(true);
-    const currentErrors = demoMode ? {} : validate(mode, values);
+    const currentErrors = demoMode
+      ? {}
+      : validate(mode, values, otpVerificationId);
     const firstInvalid = Object.keys(currentErrors)[0];
     if (firstInvalid) {
       formRef.current?.elements[firstInvalid]?.focus();
@@ -397,6 +585,9 @@ export default function AuthPage({ onAuthenticated }) {
       const user = await login({
         email: values.email.trim(),
         password: values.password,
+        phone: normalizePhone(values.phone),
+        otp: values.otp.trim(),
+        otpVerificationId,
       });
       setStatus({
         type: "success",
@@ -413,6 +604,82 @@ export default function AuthPage({ onAuthenticated }) {
             : isSignup
               ? "We couldn't create your account. Check your details and invite code, then try again."
               : "We couldn't sign you in. Check your email and password, then try again.",
+      });
+    }
+  }
+
+  async function handleSendOtp() {
+    if (isLoading) return;
+    const phone = normalizePhone(values.phone);
+    if (!PHONE_PATTERN.test(phone)) {
+      setTouched((current) => ({ ...current, phone: true }));
+      setStatus({
+        type: "error",
+        message: "Enter a valid mobile number with its country code before requesting a code.",
+      });
+      formRef.current?.elements.phone?.focus();
+      return;
+    }
+
+    if (!captchaVerified) {
+      setStatus({
+        type: "error",
+        message: "Complete the CAPTCHA before requesting a code.",
+      });
+      return;
+    }
+
+    setStatus({ type: "sending-otp" });
+    try {
+      const result = await requestPhoneOtp({ phone });
+      setOtpVerificationId(result.verificationId);
+      setOtpSent(true);
+      setCaptchaVerified(false);
+      setCaptchaKey((current) => current + 1);
+      setValues((current) => ({ ...current, otp: "" }));
+      setStatus({
+        type: "info",
+        message: `A verification code was sent to ${phone}.`,
+      });
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "We couldn't send a verification code. Check your number and try again.",
+      });
+    }
+  }
+
+  async function handleForgotPassword() {
+    if (isLoading) return;
+    const email = values.email.trim();
+    if (!EMAIL_PATTERN.test(email)) {
+      setTouched((current) => ({ ...current, email: true }));
+      setStatus({
+        type: "error",
+        message: "Enter a valid department email to request a password reset.",
+      });
+      formRef.current?.elements.email?.focus();
+      return;
+    }
+
+    setStatus({ type: "sending-reset" });
+    try {
+      await requestPasswordReset({ email });
+      setStatus({
+        type: "info",
+        message:
+          "If an account exists for that email, a password reset link will be sent.",
+      });
+    } catch (error) {
+      setStatus({
+        type: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "We couldn't request a password reset. Please try again.",
       });
     }
   }
@@ -639,6 +906,54 @@ export default function AuthPage({ onAuthenticated }) {
                     value={values.inviteCode}
                   />
                 )}
+                {!isSignup && (
+                  <>
+                    <AuthField
+                      autoComplete="tel"
+                      disabled={isLoading}
+                      error={visibleError("phone")}
+                      hint="Include your country code, for example +263."
+                      icon="phone"
+                      id={fieldId("phone")}
+                      label="Mobile number"
+                      name="phone"
+                      onBlur={handleBlur}
+                      onChange={handleChange}
+                      placeholder="+263 77 123 4567"
+                      type="tel"
+                      value={values.phone}
+                      action={
+                        <button
+                          className="fts-auth__action-button"
+                          disabled={isLoading}
+                          onClick={handleSendOtp}
+                          type="button"
+                        >
+                          {otpSent ? "Resend OTP" : "Send OTP"}
+                        </button>
+                      }
+                    />
+                    {otpSent && (
+                      <AuthField
+                        autoComplete="one-time-code"
+                        disabled={isLoading}
+                        error={visibleError("otp")}
+                        icon="key"
+                        id={fieldId("otp")}
+                        label="Mobile verification code"
+                        name="otp"
+                        onBlur={handleBlur}
+                        onChange={handleChange}
+                        placeholder="Enter the code from your SMS"
+                        value={values.otp}
+                      />
+                    )}
+                    <TextCaptcha
+                      key={captchaKey}
+                      onVerify={setCaptchaVerified}
+                    />
+                  </>
+                )}
                 <AuthField
                   autoComplete={isSignup ? "new-password" : "current-password"}
                   disabled={isLoading}
@@ -656,6 +971,16 @@ export default function AuthPage({ onAuthenticated }) {
                   value={values.password}
                   visible={showPassword}
                 />
+                {!isSignup && (
+                  <button
+                    className="fts-auth__forgot"
+                    disabled={isLoading}
+                    onClick={handleForgotPassword}
+                    type="button"
+                  >
+                    Forgot password?
+                  </button>
+                )}
                 {isSignup && (
                   <AuthField
                     autoComplete="new-password"
@@ -699,7 +1024,15 @@ export default function AuthPage({ onAuthenticated }) {
                     role="status"
                   >
                     <Icon className="fts-auth__spinner" name="activity" />
-                    <p>{isSignup ? "Creating your account..." : "Signing you in..."}</p>
+                    <p>
+                      {status.type === "sending-otp"
+                        ? "Sending your verification code..."
+                        : status.type === "sending-reset"
+                          ? "Requesting your password reset..."
+                        : isSignup
+                          ? "Creating your account..."
+                          : "Signing you in..."}
+                    </p>
                   </div>
                 )}
 
@@ -711,7 +1044,15 @@ export default function AuthPage({ onAuthenticated }) {
                   {isLoading ? (
                     <>
                       <Icon className="fts-auth__spinner" name="activity" size={18} />
-                      <span>{isSignup ? "Creating account..." : "Signing in..."}</span>
+                      <span>
+                        {status.type === "sending-otp"
+                          ? "Sending code..."
+                          : status.type === "sending-reset"
+                            ? "Sending reset link..."
+                            : isSignup
+                              ? "Creating account..."
+                              : "Signing in..."}
+                      </span>
                     </>
                   ) : (
                     <>
