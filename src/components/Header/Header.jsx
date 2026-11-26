@@ -2,7 +2,16 @@ import { useState } from "react";
 import Icon from "../Icon/Icon";
 import "./Header.css";
 
-function Header({ title, subtitle, isDrawerOpen, onToggleDrawer, onNewRequest, pendingAlerts, onAlertClick }) {
+function getInitials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
+}
+
+function Header({ title, subtitle, user, isDrawerOpen, onToggleDrawer, onNewRequest, pendingAlerts, onAlertClick }) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
@@ -78,8 +87,8 @@ function Header({ title, subtitle, isDrawerOpen, onToggleDrawer, onNewRequest, p
         </div>
 
         <div className="profile">
-          <div className="avatar">EC</div>
-          <span>Eunice Chikondo</span>
+          <div className="avatar">{getInitials(user?.fullName)}</div>
+          <span>{user?.fullName || "User"}</span>
         </div>
       </div>
     </header>

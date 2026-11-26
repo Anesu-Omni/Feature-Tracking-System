@@ -1,10 +1,10 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useAuth } from "../../context/useAuth";
+import { EMAIL_ERROR_MESSAGE, isAllowedEmail } from "../../context/authStorage";
 import "./AuthPage.css";
 
 const SAMPLE_USER_NAME = "Hellington Vunganayi";
 const MIN_PASSWORD_LENGTH = 8;
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_PATTERN = /^\+[1-9]\d{7,14}$/;
 const CAPTCHA_CHARACTERS =
   "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -238,7 +238,7 @@ function normalizePhone(phone) {
   return phone.replace(/[\s()-]/g, "");
 }
 
-function validate(mode, values, otpVerificationId) {
+function validate(mode, values) {
   const errors = {};
 
   if (mode === "signup" && !values.fullName.trim()) {
@@ -248,8 +248,8 @@ function validate(mode, values, otpVerificationId) {
   const email = values.email.trim();
   if (!email) {
     errors.email = "Enter your department email.";
-  } else if (!EMAIL_PATTERN.test(email)) {
-    errors.email = "Enter a valid email address.";
+  } else if (!isAllowedEmail(email)) {
+    errors.email = EMAIL_ERROR_MESSAGE;
   }
 
   if (mode === "signup" && !values.inviteCode.trim()) {
@@ -258,18 +258,9 @@ function validate(mode, values, otpVerificationId) {
 
   if (mode === "login") {
     const phone = normalizePhone(values.phone);
-    if (!phone) {
-      errors.phone = "Enter your mobile number.";
-    } else if (!PHONE_PATTERN.test(phone)) {
+    if (phone && !PHONE_PATTERN.test(phone)) {
       errors.phone = "Enter a valid number with its country code, such as +263.";
-    } else if (!otpVerificationId) {
-      errors.phone = "Send a verification code to your mobile number first.";
     }
-
-    if (otpVerificationId && !values.otp.trim()) {
-      errors.otp = "Enter the verification code sent to your mobile.";
-    }
-
   }
 
   if (!values.password) {
@@ -449,7 +440,6 @@ function TextCaptcha({ onVerify }) {
 
 export default function AuthPage({ onAuthenticated }) {
   const {
-    demoMode,
     login,
     requestPasswordReset,
     requestPhoneOtp,
@@ -475,9 +465,7 @@ export default function AuthPage({ onAuthenticated }) {
     status.type === "sending-otp" ||
     status.type === "sending-reset";
   const isSignup = mode === "signup";
-  const errors = demoMode
-    ? {}
-    : validate(mode, values, otpVerificationId);
+  const errors = validate(mode, values);
   const fieldId = (name) => `${uid}-${name}`;
   const visibleError = (name) =>
     touched[name] || submitted ? errors[name] : "";
@@ -533,20 +521,8 @@ export default function AuthPage({ onAuthenticated }) {
     event.preventDefault();
     if (isLoading) return;
 
-    if (demoMode && isSignup) {
-      switchMode("login");
-      setStatus({
-        type: "info",
-        message:
-          "Account creation is a preview only. Sign in to open the workspace.",
-      });
-      return;
-    }
-
     setSubmitted(true);
-    const currentErrors = demoMode
-      ? {}
-      : validate(mode, values, otpVerificationId);
+    const currentErrors = validate(mode, values);
     const firstInvalid = Object.keys(currentErrors)[0];
     if (firstInvalid) {
       formRef.current?.elements[firstInvalid]?.focus();
@@ -596,6 +572,19 @@ export default function AuthPage({ onAuthenticated }) {
       });
       onAuthenticated?.(user);
     } catch (error) {
+      const invalidCredentials =
+        error instanceof Error &&
+        (error.message === "Incorrect email or password." ||
+          error.status === 401);
+      if (!isSignup && invalidCredentials) {
+        setValues(EMPTY_VALUES);
+        setTouched({});
+        setSubmitted(false);
+        setOtpVerificationId("");
+        setOtpSent(false);
+        setCaptchaVerified(false);
+        setCaptchaKey((current) => current + 1);
+      }
       setStatus({
         type: "error",
         message:
@@ -655,11 +644,11 @@ export default function AuthPage({ onAuthenticated }) {
   async function handleForgotPassword() {
     if (isLoading) return;
     const email = values.email.trim();
-    if (!EMAIL_PATTERN.test(email)) {
+    if (!isAllowedEmail(email)) {
       setTouched((current) => ({ ...current, email: true }));
       setStatus({
         type: "error",
-        message: "Enter a valid department email to request a password reset.",
+        message: EMAIL_ERROR_MESSAGE,
       });
       formRef.current?.elements.email?.focus();
       return;
@@ -886,7 +875,7 @@ export default function AuthPage({ onAuthenticated }) {
                   name="email"
                   onBlur={handleBlur}
                   onChange={handleChange}
-                  placeholder="name@department.org"
+                  placeholder="john.doe@econet.co.zw"
                   type="email"
                   value={values.email}
                 />
@@ -912,10 +901,10 @@ export default function AuthPage({ onAuthenticated }) {
                       autoComplete="tel"
                       disabled={isLoading}
                       error={visibleError("phone")}
-                      hint="Include your country code, for example +263."
+                      hint="Optional. Include your country code, for example +263."
                       icon="phone"
                       id={fieldId("phone")}
-                      label="Mobile number"
+                      label="Mobile number (optional)"
                       name="phone"
                       onBlur={handleBlur}
                       onChange={handleChange}
@@ -940,7 +929,7 @@ export default function AuthPage({ onAuthenticated }) {
                         error={visibleError("otp")}
                         icon="key"
                         id={fieldId("otp")}
-                        label="Mobile verification code"
+                        label="Mobile verification code (optional)"
                         name="otp"
                         onBlur={handleBlur}
                         onChange={handleChange}
@@ -948,10 +937,12 @@ export default function AuthPage({ onAuthenticated }) {
                         value={values.otp}
                       />
                     )}
-                    <TextCaptcha
-                      key={captchaKey}
-                      onVerify={setCaptchaVerified}
-                    />
+                    {normalizePhone(values.phone) && (
+                      <TextCaptcha
+                        key={captchaKey}
+                        onVerify={setCaptchaVerified}
+                      />
+                    )}
                   </>
                 )}
                 <AuthField

@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { AuthContext } from "./AuthContextState";
-
-const DEMO_USER = {
-  fullName: "Hellington Vunganayi",
-  role: "Developer",
-  assignedProjectIds: ["demo-project"],
-};
+import { registerAccount, verifyCredentials } from "./authStorage";
 
 async function postAuthRequest(path, payload, fallbackMessage) {
   let response;
@@ -41,11 +36,13 @@ async function postAuthRequest(path, payload, fallbackMessage) {
   }
 
   if (!response.ok) {
-    throw new Error(
+    const error = new Error(
       typeof data.message === "string" && data.message.trim()
         ? data.message
         : fallbackMessage,
     );
+    error.status = response.status;
+    throw error;
   }
 
   return data;
@@ -78,19 +75,26 @@ export function AuthProvider({ children }) {
     otpVerificationId,
   }) {
     if (demoMode) {
-      setUser(DEMO_USER);
-      return DEMO_USER;
+      const account = await verifyCredentials(email, password);
+      if (!account) {
+        throw new Error("Incorrect email or password.");
+      }
+      setUser(account);
+      return account;
+    }
+
+    const payload = { email, password };
+    if (phone) {
+      payload.phone = phone;
+      if (otp) {
+        payload.otp = otp;
+        payload.otpVerificationId = otpVerificationId;
+      }
     }
 
     const data = await postAuthRequest(
       "/api/auth/login",
-      {
-        email,
-        password,
-        phone,
-        otp,
-        otpVerificationId,
-      },
+      payload,
       "Sign-in failed. Check your credentials and try again.",
     );
     const authenticatedUser = getAuthenticatedUser(data);
@@ -101,7 +105,7 @@ export function AuthProvider({ children }) {
   async function requestPhoneOtp({ phone }) {
     if (demoMode) {
       throw new Error(
-        "SMS verification is unavailable in preview mode. Configure the live authentication API to send a code.",
+        "SMS verification isn't available in the demo. You can leave the mobile number and code blank.",
       );
     }
 
@@ -133,11 +137,9 @@ export function AuthProvider({ children }) {
 
   async function signup({ fullName, email, password, inviteCode }) {
     if (demoMode) {
-      return {
-        pending: true,
-        message:
-          "Account creation is a preview only. Sign in to open the workspace.",
-      };
+      const newUser = await registerAccount({ fullName, email, password });
+      setUser(newUser);
+      return { pending: false, user: newUser };
     }
 
     const data = await postAuthRequest(
