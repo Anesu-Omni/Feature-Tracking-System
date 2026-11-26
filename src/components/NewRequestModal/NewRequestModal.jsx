@@ -2,11 +2,18 @@ import { useState } from "react";
 import Icon from "../Icon/Icon";
 import "./NewRequestModal.css";
 
-function NewRequestModal({ isOpen, onClose, onAdd, systems, nextId }) {
+function NewRequestModal({
+  isOpen,
+  onClose,
+  onAdd,
+  systems,
+  nextId,
+  defaultRequester = "Eunice Chikondo",
+}) {
   const [title, setTitle] = useState("");
   const [system, setSystem] = useState(systems[0] || "Payroll Management System");
   const [priority, setPriority] = useState("Medium");
-  const [requester, setRequester] = useState("Eunice Chikondo");
+  const [requester, setRequester] = useState(defaultRequester);
 
   if (!isOpen) return null;
 

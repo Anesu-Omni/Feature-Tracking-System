@@ -19,7 +19,25 @@ function getInitials(name = "") {
     .join("");
 }
 
-function Sidebar({ activeScreen, isOpen, onClose, onNavigate, user, onLogout }) {
+function Sidebar({
+  activeScreen,
+  isOpen,
+  onClose,
+  onNavigate,
+  user,
+  roleLabel,
+  permissions = {},
+  onLogout,
+}) {
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (item.id === "requests") return permissions.canViewRequests ?? true;
+    if (item.id === "systems") return permissions.canViewSystems ?? true;
+    if (item.id === "users") return permissions.canViewUsers ?? true;
+    if (item.id === "reports") return permissions.canViewReports ?? true;
+    if (item.id === "settings") return permissions.canViewSettings ?? true;
+    return true;
+  });
+
   return (
     <>
       {isOpen && <div className="drawer-backdrop" onClick={onClose} aria-hidden="true" />}
@@ -44,7 +62,7 @@ function Sidebar({ activeScreen, isOpen, onClose, onNavigate, user, onLogout }) 
         </div>
 
         <nav>
-          {NAV_ITEMS.map((item) => (
+          {visibleNavItems.map((item) => (
             <a
               key={item.id}
               href={`#${item.id}`}
@@ -65,7 +83,7 @@ function Sidebar({ activeScreen, isOpen, onClose, onNavigate, user, onLogout }) 
           <div className="avatar">{getInitials(user?.fullName)}</div>
           <div className="footer-user-info">
             <strong>{user?.fullName}</strong>
-            <small>{user?.role}</small>
+            <small>{roleLabel || user?.role}</small>
           </div>
           {onLogout && (
             <button type="button" className="sidebar-logout" onClick={onLogout}>

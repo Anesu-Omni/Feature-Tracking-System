@@ -2,7 +2,16 @@ import { useState } from "react";
 import Icon from "../Icon/Icon";
 import "./Header.css";
 
-function Header({ title, subtitle, isDrawerOpen, onToggleDrawer, onNewRequest, pendingAlerts, onAlertClick }) {
+function Header({
+  title,
+  subtitle,
+  isDrawerOpen,
+  onToggleDrawer,
+  onNewRequest,
+  pendingAlerts = [],
+  onAlertClick,
+  user,
+}) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
@@ -25,9 +34,11 @@ function Header({ title, subtitle, isDrawerOpen, onToggleDrawer, onNewRequest, p
       </div>
 
       <div className="header-right">
-        <button type="button" className="view-all btn-with-icon" onClick={onNewRequest}>
-          <Icon name="plus" /> New Request
-        </button>
+        {onNewRequest && (
+          <button type="button" className="view-all btn-with-icon" onClick={onNewRequest}>
+            <Icon name="plus" /> New Request
+          </button>
+        )}
 
         <div className="notification-wrapper">
           <button
@@ -78,8 +89,15 @@ function Header({ title, subtitle, isDrawerOpen, onToggleDrawer, onNewRequest, p
         </div>
 
         <div className="profile">
-          <div className="avatar">EC</div>
-          <span>Eunice Chikondo</span>
+          <div className="avatar">
+            {(user?.fullName || "")
+              .split(" ")
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((part) => part[0].toUpperCase())
+              .join("")}
+          </div>
+          <span>{user?.fullName}</span>
         </div>
       </div>
     </header>
