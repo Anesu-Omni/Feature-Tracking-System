@@ -6,7 +6,14 @@ import "./dashboard.css";
 
 const PRIORITY_COLORS = { High: "#d9383a", Medium: "#2f75bd", Low: "#4a82b8" };
 
-function Dashboard({ requests, onOpenRequests, onStatusChange, onDelete }) {
+function Dashboard({
+  requests,
+  permissions,
+  onOpenRequests,
+  onStatusChange,
+  onAssignDeveloper,
+  onDelete,
+}) {
   const [selectedPriority, setSelectedPriority] = useState("All");
 
   const now = new Date();
@@ -146,7 +153,13 @@ function Dashboard({ requests, onOpenRequests, onStatusChange, onDelete }) {
           </button>
         </div>
 
-        <RequestTable requests={recentRequests} onStatusChange={onStatusChange} onDelete={onDelete} />
+        <RequestTable
+          requests={recentRequests}
+          permissions={permissions}
+          onStatusChange={onStatusChange}
+          onAssignDeveloper={onAssignDeveloper}
+          onDelete={onDelete}
+        />
       </section>
     </>
   );

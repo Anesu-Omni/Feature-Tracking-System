@@ -11,7 +11,16 @@ function getInitials(name = "") {
     .join("");
 }
 
-function Header({ title, subtitle, user, isDrawerOpen, onToggleDrawer, onNewRequest, pendingAlerts, onAlertClick }) {
+function Header({
+  title,
+  subtitle,
+  isDrawerOpen,
+  onToggleDrawer,
+  onNewRequest,
+  pendingAlerts = [],
+  onAlertClick,
+  user,
+}) {
   const [showNotifications, setShowNotifications] = useState(false);
 
   return (
@@ -34,9 +43,11 @@ function Header({ title, subtitle, user, isDrawerOpen, onToggleDrawer, onNewRequ
       </div>
 
       <div className="header-right">
-        <button type="button" className="view-all btn-with-icon" onClick={onNewRequest}>
-          <Icon name="plus" /> New Request
-        </button>
+        {onNewRequest && (
+          <button type="button" className="view-all btn-with-icon" onClick={onNewRequest}>
+            <Icon name="plus" /> New Request
+          </button>
+        )}
 
         <div className="notification-wrapper">
           <button

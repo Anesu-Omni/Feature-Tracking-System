@@ -24,8 +24,13 @@ import {
   getNextRequestId,
   getRequestViewTitle,
 } from "./utils/requestHelpers";
+import { getPermissions, getRoleLabel, ROLE_PRESETS } from "./utils/permissions";
 
-function Workspace({ user, onLogout, logoutError }) {
+function Workspace({ user, demoMode, onLogout, logoutError }) {
+  const [previewUser, setPreviewUser] = useState(null);
+  const activeUser = demoMode && previewUser ? previewUser : user;
+  const permissions = useMemo(() => getPermissions(activeUser), [activeUser]);
+  const roleLabel = getRoleLabel(activeUser);
   const [requests, setRequests] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : getInitialRequests();
@@ -47,14 +52,21 @@ function Workspace({ user, onLogout, logoutError }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
   }, [requests]);
 
+  const roleScopedRequests = useMemo(() => {
+    if (permissions.isDev) {
+      return requests.filter((request) => request.assignedDeveloper === activeUser.fullName);
+    }
+    return permissions.canViewAllRequests ? requests : [];
+  }, [requests, permissions.canViewAllRequests, permissions.isDev, activeUser.fullName]);
+
   const monthLabel = formatMonthLabel(new Date());
   const nextRequestId = useMemo(() => getNextRequestId(requests), [requests]);
-  const availableMonths = getAvailableMonths(requests);
+  const availableMonths = getAvailableMonths(roleScopedRequests);
   const selectedMonth = availableMonths.find((m) => m.value === monthFilter);
   const periodLabel = monthFilter === "all" ? "all months" : selectedMonth?.label ?? monthLabel;
-  const pendingAlerts = requests.filter((r) => r.status !== "Completed");
+  const pendingAlerts = roleScopedRequests.filter((r) => r.status !== "Completed");
 
-  const filteredRequests = requests.filter((r) => {
+  const filteredRequests = roleScopedRequests.filter((r) => {
     const query = searchQuery.toLowerCase();
     const matchesMonth = monthFilter === "all" || getMonthKey(new Date(r.createdAt)) === monthFilter;
     const matchesSystem = systemFilter === "All" || r.system === systemFilter;
@@ -71,14 +83,29 @@ function Workspace({ user, onLogout, logoutError }) {
 
   /* ---------- Request data handlers ---------- */
   const handleAddRequest = (newReq) => {
+    if (!permissions.canCreateRequest) return;
     setRequests((prev) => [newReq, ...prev]);
   };
 
   const handleStatusChange = (id, newStatus) => {
+    if (
+      !permissions.canUpdateProgress ||
+      (newStatus === "Completed" && !permissions.canVerifyAndComplete)
+    ) {
+      return;
+    }
     setRequests((prev) => prev.map((req) => (req.id === id ? { ...req, status: newStatus } : req)));
   };
 
+  const handleAssignDeveloper = (id, developerName) => {
+    if (!permissions.canAssignDeveloper) return;
+    setRequests((prev) =>
+      prev.map((req) => (req.id === id ? { ...req, assignedDeveloper: developerName } : req)),
+    );
+  };
+
   const handleDeleteRequest = (id) => {
+    if (!permissions.canDeleteRequest) return;
     setRequests((prev) => prev.filter((req) => req.id !== id));
   };
 
@@ -90,6 +117,14 @@ function Workspace({ user, onLogout, logoutError }) {
 
   /* ---------- Navigation ---------- */
   const navigateTo = (targetScreen) => {
+    const screenPermissions = {
+      requests: permissions.canViewRequests,
+      systems: permissions.canViewSystems,
+      users: permissions.canViewUsers,
+      reports: permissions.canViewReports,
+      settings: permissions.canViewSettings,
+    };
+    if (screenPermissions[targetScreen] === false) return;
     setScreen(targetScreen);
     setIsDrawerOpen(false);
   };
@@ -123,11 +158,13 @@ function Workspace({ user, onLogout, logoutError }) {
   /* ---------- Page header text ---------- */
   const pageHeaders = {
     dashboard: {
-      title: "Dashboard",
-      subtitle: `Welcome back, ${user.fullName}. Here is your ${monthLabel} overview.`,
+      title: permissions.isPM ? "Department Oversight" : "Dashboard",
+      subtitle: permissions.isPM
+        ? `Welcome back, ${activeUser.fullName} (${roleLabel}). Read-only overview for ${monthLabel}.`
+        : `Welcome back, ${activeUser.fullName} (${roleLabel}). Here is your ${monthLabel} overview.`,
     },
     requests: {
-      title: requestView.title,
+      title: permissions.isDev ? "My Assigned Requests" : requestView.title,
       subtitle: `Showing ${filteredRequests.length} requests for ${periodLabel}${systemFilter === "All" ? "." : ` in ${systemFilter}.`}`,
     },
     systems: {
@@ -155,20 +192,50 @@ function Workspace({ user, onLogout, logoutError }) {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onNavigate={handleSidebarNavigate}
-        user={user}
+        user={activeUser}
+        roleLabel={roleLabel}
+        permissions={permissions}
         onLogout={onLogout}
       />
 
       <main className="main-content">
+        {demoMode && (
+          <div className="role-preview-bar">
+            <span>
+              <strong>Active Role:</strong> {activeUser.fullName} — <em>{roleLabel}</em>
+            </span>
+            <label>
+              Switch Preview Role:{" "}
+              <select
+                value={roleLabel}
+                onChange={(event) => {
+                  const preset = ROLE_PRESETS.find(
+                    (item) => getRoleLabel(item.user) === event.target.value,
+                  );
+                  setPreviewUser(preset ? preset.user : null);
+                  setScreen("dashboard");
+                }}
+              >
+                {ROLE_PRESETS.map((preset) => (
+                  <option key={preset.label} value={getRoleLabel(preset.user)}>
+                    {preset.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+
         <Header
           title={pageHeaders[screen].title}
           subtitle={pageHeaders[screen].subtitle}
           user={user}
           isDrawerOpen={isDrawerOpen}
           onToggleDrawer={() => setIsDrawerOpen((prev) => !prev)}
-          onNewRequest={() => setIsModalOpen(true)}
+          onNewRequest={permissions.canCreateRequest ? () => setIsModalOpen(true) : null}
           pendingAlerts={pendingAlerts}
           onAlertClick={(item) => openRequests({ status: item.status })}
+          user={activeUser}
         />
 
         {logoutError && (
@@ -179,9 +246,11 @@ function Workspace({ user, onLogout, logoutError }) {
 
         {screen === "dashboard" && (
           <Dashboard
-            requests={requests}
+            requests={roleScopedRequests}
+            permissions={permissions}
             onOpenRequests={openRequests}
             onStatusChange={handleStatusChange}
+            onAssignDeveloper={handleAssignDeveloper}
             onDelete={handleDeleteRequest}
           />
         )}
@@ -189,6 +258,7 @@ function Workspace({ user, onLogout, logoutError }) {
         {screen === "requests" && (
           <Requests
             requests={filteredRequests}
+            permissions={permissions}
             requestView={requestView}
             periodLabel={periodLabel}
             systems={AVAILABLE_SYSTEMS}
@@ -202,38 +272,47 @@ function Workspace({ user, onLogout, logoutError }) {
             onFilterChange={updateRequestFilter}
             onBack={() => navigateTo("dashboard")}
             onStatusChange={handleStatusChange}
+            onAssignDeveloper={handleAssignDeveloper}
             onDelete={handleDeleteRequest}
           />
         )}
 
         {screen === "systems" && (
           <Systems
-            requests={requests}
+            requests={roleScopedRequests}
             systems={AVAILABLE_SYSTEMS}
             onViewSystemRequests={viewSystemRequests}
           />
         )}
 
-        {screen === "users" && <Users requests={requests} />}
+        {screen === "users" && permissions.canViewUsers && <Users requests={requests} />}
 
-        {screen === "reports" && <Reports requests={requests} systems={AVAILABLE_SYSTEMS} />}
+        {screen === "reports" && permissions.canViewReports && (
+          <Reports requests={requests} systems={AVAILABLE_SYSTEMS} />
+        )}
 
-        {screen === "settings" && <Settings onResetData={handleResetDemoData} />}
+        {screen === "settings" && permissions.canViewSettings && (
+          <Settings onResetData={handleResetDemoData} />
+        )}
       </main>
 
-      <NewRequestModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onAdd={handleAddRequest}
-        systems={AVAILABLE_SYSTEMS}
-        nextId={nextRequestId}
-      />
+      {permissions.canCreateRequest && (
+        <NewRequestModal
+          key={activeUser.fullName}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onAdd={handleAddRequest}
+          systems={AVAILABLE_SYSTEMS}
+          nextId={nextRequestId}
+          defaultRequester={activeUser.fullName}
+        />
+      )}
     </div>
   );
 }
 
 function WorkspaceGate() {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, demoMode, isAuthenticated, logout } = useAuth();
   const [logoutError, setLogoutError] = useState("");
 
   async function handleLogout() {
@@ -251,7 +330,14 @@ function WorkspaceGate() {
     return <AuthPage />;
   }
 
-  return <Workspace user={user} onLogout={handleLogout} logoutError={logoutError} />;
+  return (
+    <Workspace
+      user={user}
+      demoMode={demoMode}
+      onLogout={handleLogout}
+      logoutError={logoutError}
+    />
+  );
 }
 
 export default function App() {

@@ -29,11 +29,11 @@ export const getInitialRequests = () => {
     { id: "FR-006", title: "Automate payroll deductions", system: "Payroll Management System", priority: "High", status: "Completed", requester: "Eunice Chikondo", createdAt: dateForMonth(0, 12) },
     { id: "FR-007", title: "Improve onboarding checklist", system: "HR Management System", priority: "Low", status: "Completed", requester: "R. Ndlovu", createdAt: dateForMonth(0, 16) },
     { id: "FR-008", title: "Add audit history", system: "Payroll Management System", priority: "Medium", status: "Completed", requester: "T. Moyo", createdAt: dateForMonth(0, 19) },
-    { id: "FR-009", title: "Add manager payroll approvals", system: "Payroll Management System", priority: "High", status: "In Progress", requester: "Eunice Chikondo", createdAt: dateForMonth(0, 21) },
-    { id: "FR-010", title: "Create a team calendar", system: "HR Management System", priority: "Medium", status: "Pending", requester: "K. Sibanda", createdAt: dateForMonth(0, 23) },
+    { id: "FR-009", title: "Add manager payroll approvals", system: "Payroll Management System", priority: "High", status: "In Progress", requester: "Eunice Chikondo", assignedDeveloper: "Hellington Vunganayi", createdAt: dateForMonth(0, 21) },
+    { id: "FR-010", title: "Create a team calendar", system: "HR Management System", priority: "Medium", status: "Pending", requester: "K. Sibanda", assignedDeveloper: "T. Moyo", createdAt: dateForMonth(0, 23) },
     { id: "FR-011", title: "Add overtime rules", system: "Payroll Management System", priority: "Low", status: "Completed", requester: "T. Moyo", createdAt: dateForMonth(-1, 12) },
-    { id: "FR-012", title: "Add employee profile fields", system: "HR Management System", priority: "Low", status: "In Progress", requester: "S. Chigumba", createdAt: dateForMonth(-1, 18) },
+    { id: "FR-012", title: "Add employee profile fields", system: "HR Management System", priority: "Low", status: "In Progress", requester: "S. Chigumba", assignedDeveloper: "Hellington Vunganayi", createdAt: dateForMonth(-1, 18) },
     { id: "FR-013", title: "Add overtime approval workflow", system: "Payroll Management System", priority: "Medium", status: "Completed", requester: "Eunice Chikondo", createdAt: dateForMonth(-2, 9) },
-    { id: "FR-014", title: "Add team leave calendar", system: "HR Management System", priority: "High", status: "Pending", requester: "R. Ndlovu", createdAt: dateForMonth(-3, 14) },
+    { id: "FR-014", title: "Add team leave calendar", system: "HR Management System", priority: "High", status: "Pending", requester: "R. Ndlovu", assignedDeveloper: "R. Ndlovu", createdAt: dateForMonth(-3, 14) },
   ];
 };

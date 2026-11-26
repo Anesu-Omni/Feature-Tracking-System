@@ -24,6 +24,21 @@ th.sortable:hover {
   font-size: 11px;
 }
 
+.assign-select {
+  max-width: 180px;
+  padding: 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #fff;
+  color: #334155;
+  font-size: 12px;
+}
+
+.assigned-dev-label {
+  color: #475569;
+  font-size: 12px;
+}
+
 .priority {
   padding: 5px 10px;
   border-radius: 20px;
@@ -59,6 +74,11 @@ th.sortable:hover {
 .status-select.completed {
   background: #dcfce7;
   color: #15803d;
+}
+
+.status-select.in-testing {
+  background: #f3e8ff;
+  color: #7e22ce;
 }
 
 .empty-requests {
