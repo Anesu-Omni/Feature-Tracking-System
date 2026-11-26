@@ -1,0 +1,60 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 40, 68, 0.55);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 120;
+}
+
+.modal-card {
+  background: white;
+  width: 100%;
+  max-width: 480px;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(17, 40, 68, 0.25);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  font-size: 19px;
+  margin-bottom: 4px;
+}
+
+.modal-header p {
+  font-size: 13px;
+  color: #53677e;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (max-width: 720px) {
+  .modal-row {
+    grid-template-columns: 1fr;
+  }
+}
