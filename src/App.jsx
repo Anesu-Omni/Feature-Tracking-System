@@ -229,6 +229,7 @@ function Workspace({ user, demoMode, onLogout, logoutError }) {
         <Header
           title={pageHeaders[screen].title}
           subtitle={pageHeaders[screen].subtitle}
+          user={user}
           isDrawerOpen={isDrawerOpen}
           onToggleDrawer={() => setIsDrawerOpen((prev) => !prev)}
           onNewRequest={permissions.canCreateRequest ? () => setIsModalOpen(true) : null}
