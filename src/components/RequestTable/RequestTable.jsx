@@ -4,8 +4,20 @@ import "./RequestTable.css";
 
 const PRIORITY_WEIGHT = { High: 3, Medium: 2, Low: 1 };
 
-function RequestTable({ requests, onStatusChange, onDelete, showActions = true }) {
+function RequestTable({
+  requests,
+  onStatusChange,
+  onAssignDeveloper,
+  onDelete,
+  permissions = {},
+  showActions = true,
+  developers = ["Hellington Vunganayi", "T. Moyo", "R. Ndlovu"],
+}) {
   const [sortConfig, setSortConfig] = useState({ key: "createdAt", direction: "desc" });
+  const canAssignDeveloper = permissions.canAssignDeveloper ?? true;
+  const canUpdateProgress = permissions.canUpdateProgress ?? true;
+  const canVerifyAndComplete = permissions.canVerifyAndComplete ?? true;
+  const canDeleteRequest = permissions.canDeleteRequest ?? true;
 
   const sortedRequests = useMemo(() => {
     return [...requests].sort((a, b) => {
@@ -15,7 +27,9 @@ function RequestTable({ requests, onStatusChange, onDelete, showActions = true }
       } else if (sortConfig.key === "priority") {
         comparison = PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority];
       } else {
-        comparison = a[sortConfig.key].localeCompare(b[sortConfig.key]);
+        comparison = String(a[sortConfig.key] || "").localeCompare(
+          String(b[sortConfig.key] || ""),
+        );
       }
       return sortConfig.direction === "asc" ? comparison : -comparison;
     });
@@ -47,6 +61,7 @@ function RequestTable({ requests, onStatusChange, onDelete, showActions = true }
               Request Title {sortArrow("title")}
             </th>
             <th>System</th>
+            <th>Assigned Dev</th>
             <th className="sortable" onClick={() => handleSort("priority")}>
               Priority {sortArrow("priority")}
             </th>
@@ -54,7 +69,7 @@ function RequestTable({ requests, onStatusChange, onDelete, showActions = true }
             <th className="sortable" onClick={() => handleSort("createdAt")}>
               Date {sortArrow("createdAt")}
             </th>
-            {showActions && <th>Actions</th>}
+            {showActions && canDeleteRequest && <th>Actions</th>}
           </tr>
         </thead>
         <tbody>
@@ -69,21 +84,51 @@ function RequestTable({ requests, onStatusChange, onDelete, showActions = true }
               </td>
               <td>{request.system}</td>
               <td>
+                {canAssignDeveloper && onAssignDeveloper ? (
+                  <select
+                    aria-label={`Assign developer for ${request.id}`}
+                    className="assign-select"
+                    value={request.assignedDeveloper || ""}
+                    onChange={(e) => onAssignDeveloper(request.id, e.target.value)}
+                  >
+                    <option value="">Unassigned</option>
+                    {developers.map((developer) => (
+                      <option key={developer} value={developer}>
+                        {developer}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="assigned-dev-label">
+                    {request.assignedDeveloper || "Unassigned"}
+                  </span>
+                )}
+              </td>
+              <td>
                 <span className={`priority ${request.priority.toLowerCase()}`}>
                   {request.priority}
                 </span>
               </td>
               <td>
-                <select
-                  aria-label={`Change status for ${request.id}`}
-                  className={`status-select ${request.status.toLowerCase().replace(" ", "-")}`}
-                  value={request.status}
-                  onChange={(e) => onStatusChange(request.id, e.target.value)}
-                >
-                  <option value="Pending">Pending</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                </select>
+                {canUpdateProgress ? (
+                  <select
+                    aria-label={`Change status for ${request.id}`}
+                    className={`status-select ${request.status.toLowerCase().replace(" ", "-")}`}
+                    value={request.status}
+                    onChange={(e) => onStatusChange(request.id, e.target.value)}
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="In Testing">In Testing</option>
+                    {(canVerifyAndComplete || request.status === "Completed") && (
+                      <option value="Completed">Completed</option>
+                    )}
+                  </select>
+                ) : (
+                  <span className={`status ${request.status.toLowerCase().replace(" ", "-")}`}>
+                    {request.status}
+                  </span>
+                )}
               </td>
               <td>
                 {new Date(request.createdAt).toLocaleDateString("en", {
@@ -92,7 +137,7 @@ function RequestTable({ requests, onStatusChange, onDelete, showActions = true }
                   year: "numeric",
                 })}
               </td>
-              {showActions && (
+              {showActions && canDeleteRequest && (
                 <td>
                   <button
                     type="button"

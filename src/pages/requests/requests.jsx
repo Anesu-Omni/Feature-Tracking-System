@@ -5,6 +5,7 @@ import "./requests.css";
 
 function Requests({
   requests,
+  permissions,
   requestView,
   periodLabel,
   systems,
@@ -18,6 +19,7 @@ function Requests({
   onFilterChange,
   onBack,
   onStatusChange,
+  onAssignDeveloper,
   onDelete,
 }) {
   return (
@@ -112,7 +114,13 @@ function Requests({
         </label>
       </div>
 
-      <RequestTable requests={requests} onStatusChange={onStatusChange} onDelete={onDelete} />
+      <RequestTable
+        requests={requests}
+        permissions={permissions}
+        onStatusChange={onStatusChange}
+        onAssignDeveloper={onAssignDeveloper}
+        onDelete={onDelete}
+      />
     </section>
   );
 }
