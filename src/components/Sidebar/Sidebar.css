@@ -154,3 +154,20 @@
   color: #b6c8dc;
   font-size: 11px;
 }
+
+.sidebar-logout {
+  margin-left: auto;
+  padding: 6px 10px;
+  border: 1px solid #2b4564;
+  border-radius: 6px;
+  background: transparent;
+  color: #b6c8dc;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sidebar-logout:hover {
+  background: #2b4564;
+  color: #fff;
+}

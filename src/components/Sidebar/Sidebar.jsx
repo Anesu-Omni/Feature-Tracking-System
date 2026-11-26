@@ -10,7 +10,16 @@ const NAV_ITEMS = [
   { id: "settings", label: "Settings", icon: "settings" },
 ];
 
-function Sidebar({ activeScreen, isOpen, onClose, onNavigate }) {
+function getInitials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
+}
+
+function Sidebar({ activeScreen, isOpen, onClose, onNavigate, user, onLogout }) {
   return (
     <>
       {isOpen && <div className="drawer-backdrop" onClick={onClose} aria-hidden="true" />}
@@ -53,11 +62,16 @@ function Sidebar({ activeScreen, isOpen, onClose, onNavigate }) {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="avatar">EC</div>
+          <div className="avatar">{getInitials(user?.fullName)}</div>
           <div className="footer-user-info">
-            <strong>Eunice Chikondo</strong>
-            <small>System Admin</small>
+            <strong>{user?.fullName}</strong>
+            <small>{user?.role}</small>
           </div>
+          {onLogout && (
+            <button type="button" className="sidebar-logout" onClick={onLogout}>
+              Sign Out
+            </button>
+          )}
         </div>
       </aside>
     </>

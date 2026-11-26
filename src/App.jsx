@@ -1,66 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import "./App.css";
+
 import AuthPage from "./pages/auth/AuthPage";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { useAuth } from "./context/useAuth";
-
-function WorkspaceGate() {
-  const { user, isAuthenticated, logout } = useAuth();
-  const [logoutError, setLogoutError] = useState("");
-
-  async function handleLogout() {
-    setLogoutError("");
-    try {
-      await logout();
-    } catch (error) {
-      setLogoutError(
-        error instanceof Error ? error.message : "Unable to sign out.",
-      );
-    }
-  }
-
-  if (!isAuthenticated) {
-    return <AuthPage />;
-  }
-
-  return (
-    <main className="workspace-shell">
-      <section className="workspace-card">
-        <span className="auth-badge">INTERNAL DEPARTMENT PORTAL</span>
-        <h1>Welcome, {user.fullName}</h1>
-        <p>Your account is connected to the department workspace.</p>
-        <div className="workspace-role">
-          Role
-          <strong>{user.role}</strong>
-        </div>
-        <p>
-          Assigned projects: <strong>{user.assignedProjectIds.length}</strong>
-        </p>
-        {logoutError && (
-          <div className="auth-alert auth-alert-error" role="alert">
-            {logoutError}
-          </div>
-        )}
-        <button
-          className="workspace-logout"
-          type="button"
-          onClick={handleLogout}
-        >
-          Sign Out
-        </button>
-      </section>
-    </main>
-  );
-}
-
-export default function App() {
-  return (
-    <AuthProvider>
-      <WorkspaceGate />
-    </AuthProvider>
-  );
-}
-import { useState, useEffect, useMemo } from "react";
-import "./App.css";
 
 import Sidebar from "./components/Sidebar/Sidebar";
 import Header from "./components/Header/Header";
@@ -82,7 +25,7 @@ import {
   getRequestViewTitle,
 } from "./utils/requestHelpers";
 
-function App() {
+function Workspace({ user, onLogout, logoutError }) {
   const [requests, setRequests] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
     return saved ? JSON.parse(saved) : getInitialRequests();
@@ -181,7 +124,7 @@ function App() {
   const pageHeaders = {
     dashboard: {
       title: "Dashboard",
-      subtitle: `Welcome back, Eunice Chikondo. Here is your ${monthLabel} overview.`,
+      subtitle: `Welcome back, ${user.fullName}. Here is your ${monthLabel} overview.`,
     },
     requests: {
       title: requestView.title,
@@ -212,6 +155,8 @@ function App() {
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
         onNavigate={handleSidebarNavigate}
+        user={user}
+        onLogout={onLogout}
       />
 
       <main className="main-content">
@@ -224,6 +169,12 @@ function App() {
           pendingAlerts={pendingAlerts}
           onAlertClick={(item) => openRequests({ status: item.status })}
         />
+
+        {logoutError && (
+          <div className="auth-alert auth-alert-error" role="alert">
+            {logoutError}
+          </div>
+        )}
 
         {screen === "dashboard" && (
           <Dashboard
@@ -280,4 +231,32 @@ function App() {
   );
 }
 
-export default App;
+function WorkspaceGate() {
+  const { user, isAuthenticated, logout } = useAuth();
+  const [logoutError, setLogoutError] = useState("");
+
+  async function handleLogout() {
+    setLogoutError("");
+    try {
+      await logout();
+    } catch (error) {
+      setLogoutError(
+        error instanceof Error ? error.message : "Unable to sign out.",
+      );
+    }
+  }
+
+  if (!isAuthenticated) {
+    return <AuthPage />;
+  }
+
+  return <Workspace user={user} onLogout={handleLogout} logoutError={logoutError} />;
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <WorkspaceGate />
+    </AuthProvider>
+  );
+}
