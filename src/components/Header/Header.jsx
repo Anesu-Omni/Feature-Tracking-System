@@ -2,6 +2,15 @@ import { useState } from "react";
 import Icon from "../Icon/Icon";
 import "./Header.css";
 
+function getInitials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
+}
+
 function Header({
   title,
   subtitle,
@@ -89,15 +98,8 @@ function Header({
         </div>
 
         <div className="profile">
-          <div className="avatar">
-            {(user?.fullName || "")
-              .split(" ")
-              .filter(Boolean)
-              .slice(0, 2)
-              .map((part) => part[0].toUpperCase())
-              .join("")}
-          </div>
-          <span>{user?.fullName}</span>
+          <div className="avatar">{getInitials(user?.fullName)}</div>
+          <span>{user?.fullName || "User"}</span>
         </div>
       </div>
     </header>

@@ -20,3 +20,7 @@ If you are developing a production application, we recommend using TypeScript wi
 Sign-in uses a custom canvas CAPTCHA with randomly generated characters and a refresh control. No CAPTCHA package or paid service is required.
 
 The text is checked in the browser before requesting an OTP. This client-side check can be bypassed and is not sufficient protection against automated abuse; production authentication should generate and validate CAPTCHA challenges on the server.
+
+## Demo authentication
+
+In development, register a demo account before signing in. Demo accounts are stored in browser local storage under `fts.auth.accounts`; clear them with `localStorage.removeItem("fts.auth.accounts")` in the browser console. Registration checks the synthetic employee roster in `src/data/demoCompanyDirectory.js` and allows only the Developers of Projects department. The roster entries are test data and must be replaced with a company-directory API before real use. Only `@omnicontact.biz` and `@econet.co.zw` email addresses are accepted. Phone and OTP are optional. This client-side store is for demonstration only; production authentication and department enforcement must happen on a trusted server.
