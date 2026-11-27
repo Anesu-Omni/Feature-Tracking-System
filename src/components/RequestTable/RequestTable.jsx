@@ -86,18 +86,12 @@ function RequestDetailsDialog({ request, onClose }) {
 
 function RequestTable({
   requests,
-  onStatusChange,
-  onAssignDeveloper,
   onDelete,
   permissions = {},
   showActions = true,
-  developers = ["Hellington Vunganayi", "T. Moyo", "R. Ndlovu"],
 }) {
   const [sortConfig, setSortConfig] = useState({ key: "createdAt", direction: "desc" });
   const [selectedRequestId, setSelectedRequestId] = useState(null);
-  const canAssignDeveloper = permissions.canAssignDeveloper ?? true;
-  const canUpdateProgress = permissions.canUpdateProgress ?? true;
-  const canVerifyAndComplete = permissions.canVerifyAndComplete ?? true;
   const canDeleteRequest = permissions.canDeleteRequest ?? true;
   const selectedRequest = requests.find((request) => request.id === selectedRequestId);
 
@@ -173,25 +167,9 @@ function RequestTable({
               </td>
               <td>{request.system}</td>
               <td>
-                {canAssignDeveloper && onAssignDeveloper ? (
-                  <select
-                    aria-label={`Assign developer for ${request.id}`}
-                    className="assign-select"
-                    value={request.assignedDeveloper || ""}
-                    onChange={(e) => onAssignDeveloper(request.id, e.target.value)}
-                  >
-                    <option value="">Unassigned</option>
-                    {developers.map((developer) => (
-                      <option key={developer} value={developer}>
-                        {developer}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="assigned-dev-label">
-                    {request.assignedDeveloper || "Unassigned"}
-                  </span>
-                )}
+                <span className="assigned-dev-label">
+                  {request.assignedDeveloper || "Unassigned"}
+                </span>
               </td>
               <td>
                 <span className={`priority ${request.priority.toLowerCase()}`}>
@@ -199,25 +177,9 @@ function RequestTable({
                 </span>
               </td>
               <td>
-                {canUpdateProgress ? (
-                  <select
-                    aria-label={`Change status for ${request.id}`}
-                    className={`status-select ${request.status.toLowerCase().replace(" ", "-")}`}
-                    value={request.status}
-                    onChange={(e) => onStatusChange(request.id, e.target.value)}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="In Testing">In Testing</option>
-                    {(canVerifyAndComplete || request.status === "Completed") && (
-                      <option value="Completed">Completed</option>
-                    )}
-                  </select>
-                ) : (
-                  <span className={`status ${request.status.toLowerCase().replace(" ", "-")}`}>
-                    {request.status}
-                  </span>
-                )}
+                <span className={`status ${request.status.toLowerCase().replace(" ", "-")}`}>
+                  {request.status}
+                </span>
               </td>
               <td>
                 {new Date(request.createdAt).toLocaleDateString("en", {

@@ -10,8 +10,6 @@ function Dashboard({
   requests,
   permissions,
   onOpenRequests,
-  onStatusChange,
-  onAssignDeveloper,
   onDelete,
 }) {
   const [selectedPriority, setSelectedPriority] = useState("All");
@@ -151,7 +149,7 @@ function Dashboard({
         <div className="section-header">
           <div>
             <h2>Recent Feature Requests</h2>
-            <p>Latest requests submitted in {monthLabel} (update status directly below)</p>
+            <p>Latest requests submitted in {monthLabel}</p>
           </div>
 
           <button className="view-all" type="button" onClick={() => onOpenRequests()}>
@@ -162,8 +160,6 @@ function Dashboard({
         <RequestTable
           requests={recentRequests}
           permissions={permissions}
-          onStatusChange={onStatusChange}
-          onAssignDeveloper={onAssignDeveloper}
           onDelete={onDelete}
         />
       </section>

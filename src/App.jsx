@@ -86,23 +86,6 @@ function Workspace({ user, onLogout, logoutError }) {
     setRequests((prev) => [newReq, ...prev]);
   };
 
-  const handleStatusChange = (id, newStatus) => {
-    if (
-      !permissions.canUpdateProgress ||
-      (newStatus === "Completed" && !permissions.canVerifyAndComplete)
-    ) {
-      return;
-    }
-    setRequests((prev) => prev.map((req) => (req.id === id ? { ...req, status: newStatus } : req)));
-  };
-
-  const handleAssignDeveloper = (id, developerName) => {
-    if (!permissions.canAssignDeveloper) return;
-    setRequests((prev) =>
-      prev.map((req) => (req.id === id ? { ...req, assignedDeveloper: developerName } : req)),
-    );
-  };
-
   const handleDeleteRequest = (id) => {
     if (!permissions.canDeleteRequest) return;
     setRequests((prev) => prev.filter((req) => req.id !== id));
@@ -226,8 +209,6 @@ function Workspace({ user, onLogout, logoutError }) {
             requests={roleScopedRequests}
             permissions={permissions}
             onOpenRequests={openRequests}
-            onStatusChange={handleStatusChange}
-            onAssignDeveloper={handleAssignDeveloper}
             onDelete={handleDeleteRequest}
           />
         )}
@@ -248,8 +229,6 @@ function Workspace({ user, onLogout, logoutError }) {
             onSystemChange={setSystemFilter}
             onFilterChange={updateRequestFilter}
             onBack={() => navigateTo("dashboard")}
-            onStatusChange={handleStatusChange}
-            onAssignDeveloper={handleAssignDeveloper}
             onDelete={handleDeleteRequest}
           />
         )}

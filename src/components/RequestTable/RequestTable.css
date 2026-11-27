@@ -129,16 +129,6 @@ th.sortable:hover {
   margin-top: 24px;
 }
 
-.assign-select {
-  max-width: 180px;
-  padding: 5px 8px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  background: #fff;
-  color: #334155;
-  font-size: 12px;
-}
-
 .assigned-dev-label {
   color: #475569;
   font-size: 12px;
@@ -155,36 +145,6 @@ th.sortable:hover {
 .priority.high { background: #fee2e2; color: #b91c1c; }
 .priority.medium { background: #e0f2fe; color: #0369a1; }
 .priority.low { background: #f1f5f9; color: #475569; }
-
-/* Inline Status Dropdown */
-.status-select {
-  padding: 5px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  border: 1px solid transparent;
-  cursor: pointer;
-}
-
-.status-select.pending {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.status-select.in-progress {
-  background: #e0e7ff;
-  color: #4338ca;
-}
-
-.status-select.completed {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.status-select.in-testing {
-  background: #f3e8ff;
-  color: #7e22ce;
-}
 
 .empty-requests {
   padding: 32px 16px;

@@ -18,8 +18,6 @@ function Requests({
   onSystemChange,
   onFilterChange,
   onBack,
-  onStatusChange,
-  onAssignDeveloper,
   onDelete,
 }) {
   return (
@@ -118,8 +116,6 @@ function Requests({
       <RequestTable
         requests={requests}
         permissions={permissions}
-        onStatusChange={onStatusChange}
-        onAssignDeveloper={onAssignDeveloper}
         onDelete={onDelete}
       />
     </section>
